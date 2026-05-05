@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "AI Pet Companion",
+  "version": "1.0",
+  "description": "Your AI-powered animated companion that reacts to your web interactions.",
+  "permissions": ["storage", "tabs"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/dude/*",
+        "assets/goku/*",
+        "assets/recep/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "kernel-logo.png",
+    "48": "kernel-logo.png",
+    "128": "kernel-logo.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "kernel-logo.png"
+  }
+}
