@@ -1,6 +1,6 @@
 /**
- * AI Pet Companion - Content Script V28 (Refined Concept)
- * Removed 'WOODCUTTER' phrase as per user feedback.
+ * AI Pet Companion - Content Script V29 (Instant Switching Fix)
+ * Fixed: Ensured immediate pet update without refresh.
  */
 
 const CELL_WIDTH = 192;
@@ -115,9 +115,10 @@ class RoamingPet {
 
   async loadPetAssets() {
     const spritesheetUrl = chrome.runtime.getURL(`assets/${this.selectedPet}/spritesheet.webp`);
-    this.img = new Image();
-    this.img.src = spritesheetUrl;
-    await this.img.decode();
+    const newImg = new Image();
+    newImg.src = spritesheetUrl;
+    await newImg.decode();
+    this.img = newImg; // Swap the image object
   }
 
   showSpeech(phrases, duration = 2000) {
@@ -145,12 +146,16 @@ class RoamingPet {
   }
 
   setupEvents() {
-    chrome.runtime.onMessage.addListener((message) => {
+    // Robust Message Listener
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'PET_CHANGED') {
         this.selectedPet = message.pet;
-        this.loadPetAssets();
-        this.showSpeech(["NEW LOOK!", "READY!"]);
+        this.loadPetAssets().then(() => {
+          this.showSpeech(["NEW LOOK!", "READY!"], 2000);
+        });
+        if (sendResponse) sendResponse({ status: "ok" });
       }
+      return true;
     });
 
     this.canvas.addEventListener('mouseenter', () => {
@@ -275,10 +280,14 @@ class RoamingPet {
       this.frame = (this.frame + 1) % this.state.frames;
       this.lastTime = time;
     }
-    this.ctx.clearRect(0, 0, CELL_WIDTH, CELL_HEIGHT);
-    this.ctx.drawImage(this.img, this.frame * CELL_WIDTH, this.state.row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT, 0, 0, CELL_WIDTH, CELL_HEIGHT);
-    this.container.style.transform = `translate(${this.pos.x}px, ${this.pos.y}px)`;
     
+    // Draw only if image is loaded
+    if (this.img && this.img.complete) {
+      this.ctx.clearRect(0, 0, CELL_WIDTH, CELL_HEIGHT);
+      this.ctx.drawImage(this.img, this.frame * CELL_WIDTH, this.state.row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT, 0, 0, CELL_WIDTH, CELL_HEIGHT);
+    }
+    
+    this.container.style.transform = `translate(${this.pos.x}px, ${this.pos.y}px)`;
     requestAnimationFrame((t) => this.loop(t));
   }
 }
